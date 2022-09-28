@@ -1,0 +1,4 @@
+This exists so the directory will be created in source control, and will not
+be sent to the server.
+
+This directory will contain files on 'home' when bitburner connects to our watcher.
