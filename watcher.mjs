@@ -71,7 +71,8 @@ const changeHandler = (eventType, filename) => {
     const myChanges = changes
     changes = {}
     Object.entries(myChanges).forEach(([ filename, relativePath ]) => {
-      relativePath = '/' + relativePath.split('\\').join('/')
+      relativePath = relativePath.split('\\').join('/')
+      if (relativePath.indexOf('/') > 0) relativePath = '/' + relativePath
 
       // if it exists, send it, otherwise delete it
       if (existsSync(filename)) {
