@@ -1,20 +1,18 @@
 import { dirname, resolve, join, relative } from 'path'
 import WebSocket, { WebSocketServer } from 'ws'
-import { write, writeFileSync, existsSync, mkdirSync, mkdir, watch, readFileSync, readdirSync, fstat, fstatSync, lstatSync } from 'fs'
+import { write, writeFileSync, existsSync, mkdirSync, mkdir, watch, readFileSync } from 'fs'
 import { fileURLToPath} from 'url'
 import * as chokidar from 'chokidar'
 
 const OPTION_DELETE_FILES = false
-const OPTION_PUSH_ON_FIRST_CONNECT = true
-let FIRST_CONNECT = true
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const APP_DIR = resolve(__dirname);
 
-//const CONTENT_DIR = join(APP_DIR, 'content')
-const CONTENT_DIR = `c:\\users\\jason\\dropbox\\bitburner\\bench\\content2`
+// const CONTENT_DIR = join(APP_DIR, 'content')
+const CONTENT_DIR = `c:\\users\\jason\\dropbox\\bitburner\\bench\\content`
+const PORT = 8333
 const SERVER_DIR = join(APP_DIR, 'server')
-const PORT = 8111
 
 /**
  * @typedef ResponseFile
@@ -79,9 +77,9 @@ const changeHandler = (eventType, filename) => {
       // if it exists, send it, otherwise delete it
       if (existsSync(filename)) {
         const content = readFileSync(filename, { encoding: 'utf8' })
-        executeMethodAll('pushFile', { filename: relativePath, content, server: 'home' }, (result) => console.log(`${result}: push ${relativePath}`))
+        executeMethodAll('pushFile', { filename: relativePath, content, server: 'home' }, (result) => console.log(`pushed ${relativePath} result: ${result}`))
       } else {
-        if (OPTION_DELETE_FILES) executeMethodAll('deleteFile', { filename: relativePath, server: 'home' }, (result) => console.log(`${result}: delete ${relativePath}`))
+        if (OPTION_DELETE_FILES) executeMethodAll('deleteFile', { filename: relativePath, server: 'home' }, (result) => console.log(`deleted ${relativePath} result: ${result}`))
       }
     })
   }, 100)
@@ -98,12 +96,6 @@ watcher
 const wss = new WebSocketServer({
   port: PORT
 })
-console.info(`Listening on port ${PORT}`)
-if (SERVER_DIR) {
-  console.info(`Will pull remote files on connect to: ${SERVER_DIR}`)
-}
-if (OPTION_PUSH_ON_FIRST_CONNECT) console.info("Will push all content on first connection")
-console.info(`Content Directory: ${CONTENT_DIR}`)
 
 const connections = []
 let commandId = 0
@@ -148,40 +140,11 @@ wss.on('connection', function connection(ws) {
     }
   });
 
-  if (SERVER_DIR) executeMethod('getAllFiles', { server: 'home' }, writeFromServer, ws)
+  executeMethod('getAllFiles', { server: 'home' }, writeFromServer, ws)
   
   ws.on('close', (ws2, code, reason) => {
     const index = connections.indexOf(ws)
     if (index >= 0) connections.splice(index, 1)
     console.log(`closed connection ${index} code ${code} reason ${reason}`)
   })
-
-  if (OPTION_PUSH_ON_FIRST_CONNECT && FIRST_CONNECT) {
-    FIRST_CONNECT = false
-    pushAllContent(ws)
-  }
 });
-
-const pushAllContent = (ws) => {
-  const enumerateFiles = (dir) => {
-    console.log(`enumerateFiles('${dir}')`)
-    const filenames = readdirSync(dir)
-    const fullPaths = filenames.map(name => ({ name, fullPath: join(dir, name) }))
-    const all = fullPaths.map(x => ({ ...x, isDirectory: lstatSync(x.fullPath).isDirectory() }))
-    const dirs = all.filter(x => x.isDirectory).map(x => x.fullPath)
-    let files = all.filter(x => !x.isDirectory).map(x => x.fullPath)
-    dirs.forEach(dir => {
-      files = files.concat(enumerateFiles(dir))
-    })
-    return files
-  }
-  
-  let files = enumerateFiles(CONTENT_DIR)
-  files.forEach(file => {
-    let relativePath = relative(CONTENT_DIR, file)
-    relativePath = relativePath.split('\\').join('/') // take care of windows backslashes in path
-    if (relativePath.indexOf('/') > 0) relativePath = '/' + relativePath // needs to have leading '/' for server name
-    const content = readFileSync(file, { encoding: 'utf8' })
-    executeMethod('pushFile', { filename: relativePath, content, server: 'home' }, (result) => console.log(`${result}: push ${relativePath}`), ws)
-  })
-}
