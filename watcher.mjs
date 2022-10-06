@@ -12,9 +12,11 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const APP_DIR = resolve(__dirname);
 
 //const CONTENT_DIR = join(APP_DIR, 'content')
-const CONTENT_DIR = `c:\\users\\jason\\dropbox\\bitburner\\bench\\content2`
+let CONTENT_DIR = `c:\\users\\jason\\dropbox\\bitburner\\bench\\content3`
 const SERVER_DIR = join(APP_DIR, 'server')
 const PORT = 8111
+
+CONTENT_DIR = process.argv[2] || join(APP_DIR, 'content')
 
 /**
  * @typedef ResponseFile
@@ -98,7 +100,6 @@ watcher
 const wss = new WebSocketServer({
   port: PORT
 })
-console.info(`Listening on port ${PORT}`)
 if (SERVER_DIR) {
   console.info(`Will pull remote files on connect to: ${SERVER_DIR}`)
 }
@@ -185,3 +186,5 @@ const pushAllContent = (ws) => {
     executeMethod('pushFile', { filename: relativePath, content, server: 'home' }, (result) => console.log(`${result}: push ${relativePath}`), ws)
   })
 }
+
+console.info(`Listening on port ${PORT}`)
