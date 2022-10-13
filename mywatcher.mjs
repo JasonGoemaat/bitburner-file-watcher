@@ -4,15 +4,16 @@ import { write, writeFileSync, existsSync, mkdirSync, mkdir, watch, readFileSync
 import { fileURLToPath} from 'url'
 import * as chokidar from 'chokidar'
 
-const OPTION_DELETE_FILES = false
+const OPTION_DELETE_FILES = true
 const OPTION_PUSH_ON_FIRST_CONNECT = true
+const OPTION_PUSH_ON_ALL_CONNECT = true
 let FIRST_CONNECT = true
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const APP_DIR = resolve(__dirname);
 
 //const CONTENT_DIR = join(APP_DIR, 'content')
-let CONTENT_DIR = `c:\\users\\jason\\dropbox\\bitburner\\bench\\content3`
+let CONTENT_DIR = `c:\\users\\jason\\dropbox\\bitburner\\bench\\main`
 const SERVER_DIR = join(APP_DIR, 'server')
 const PORT = 8111
 
@@ -103,7 +104,11 @@ const wss = new WebSocketServer({
 if (SERVER_DIR) {
   console.info(`Will pull remote files on connect to: ${SERVER_DIR}`)
 }
-if (OPTION_PUSH_ON_FIRST_CONNECT) console.info("Will push all content on first connection")
+if (OPTION_PUSH_ON_ALL_CONNECT) {
+  console.info("Will push all content on all connections")
+} else {
+  if (OPTION_PUSH_ON_FIRST_CONNECT) console.info("Will push all content on first connection")
+}
 console.info(`Content Directory: ${CONTENT_DIR}`)
 
 const connections = []
@@ -157,7 +162,7 @@ wss.on('connection', function connection(ws) {
     console.log(`closed connection ${index} code ${code} reason ${reason}`)
   })
 
-  if (OPTION_PUSH_ON_FIRST_CONNECT && FIRST_CONNECT) {
+  if ((OPTION_PUSH_ON_FIRST_CONNECT && FIRST_CONNECT) || OPTION_PUSH_ON_ALL_CONNECT) {
     FIRST_CONNECT = false
     pushAllContent(ws)
   }
