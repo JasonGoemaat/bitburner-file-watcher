@@ -1,0 +1,15 @@
+// {
+//   "compilerOptions": {
+//     "target": "ESNext",
+//     "types": ["NetscriptDefinitions.d.ts"]
+//   }
+// }
+{
+  "compilerOptions": {
+      "target": "ESNext",
+  },
+  "exclude": [
+      "node_modules",
+      "**/node_modules/*"
+  ]
+}
